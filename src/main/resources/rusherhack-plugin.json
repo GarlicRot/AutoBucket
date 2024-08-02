@@ -1,0 +1,16 @@
+{
+  "Plugin-Class": "org.autobucket.AutoBucketPlugin",
+  "Name": "AutoBucket",
+  "Version": "1.0",
+  "Description": "Automatically Bucket Entities",
+  "Authors": ["Garlicrot"],
+  "Minecraft-Versions": [
+    "1.20.1",
+    "1.20.2",
+    "1.20.3",
+    "1.20.4",
+    "1.20.5",
+    "1.20.6",
+    "1.21"
+  ]
+}
