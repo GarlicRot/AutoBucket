@@ -1,4 +1,4 @@
-# AutoBucket
+# AutoBucket ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/GarlicRot/AutoBucket/total)
 
 <p align="center">
     <img src="https://i.ibb.co/Q7BzrDL/image.png" alt="AutoBucket Module" border="0" width="250">
