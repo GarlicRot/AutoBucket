@@ -1,7 +1,7 @@
 # AutoBucket ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/GarlicRot/AutoBucket/total)
 
 <p align="center">
-    <img src="https://i.ibb.co/Q7BzrDL/image.png" alt="AutoBucket Module" border="0" width="250">
+    <img src="https://i.ibb.co/g4bgVpH/Auto-Bucket-Module.png" alt="AutoBucket Module" border="0" width="250">
   </a>
 </p>
 
@@ -16,3 +16,9 @@
   - Tadpoles
   - Tropical Fish
 - Cooldown system to prevent rapid capturing
+
+## How to Use
+
+- Ensure you have water buckets in your inventory, hotbar, or main hand.
+- Move within a 5-block radius of the target aquatic mobs.
+- The plugin will automatically use the water buckets to capture the mobs based on your configured settings.
