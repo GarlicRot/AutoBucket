@@ -1,7 +1,7 @@
 # AutoBucket ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/GarlicRot/AutoBucket/total)
 
 <p align="center">
-    <img src="https://i.ibb.co/g4bgVpH/Auto-Bucket-Module.png" alt="AutoBucket Module" border="0" width="250">
+    <img src="https://i.ibb.co/hWwvsyt/image.png" alt="AutoBucket Module" border="0" width="250">
   </a>
 </p>
 
