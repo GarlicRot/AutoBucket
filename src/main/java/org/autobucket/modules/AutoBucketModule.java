@@ -33,7 +33,6 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
     private final Minecraft minecraft = Minecraft.getInstance();
 
     // Settings for automatically capturing entities
-    private final BooleanSetting autoCapture;
     private final BooleanSetting targetAxolotls;
     private final BooleanSetting targetCod;
     private final BooleanSetting targetPufferfish;
@@ -51,8 +50,6 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
     public AutoBucketModule() {
         super("AutoBucket", ModuleCategory.MISC);
 
-        autoCapture = new BooleanSetting("AutoCapture", "Automatically capture entities", true);
-
         // Settings to target specific entities
         targetAxolotls = new BooleanSetting("Axolotls", "Bucket Axolotls", true);
         targetCod = new BooleanSetting("Cod", "Bucket Cod", true);
@@ -61,11 +58,8 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
         targetTadpoles = new BooleanSetting("Tadpoles", "Bucket Tadpoles", true);
         targetTropicalFish = new BooleanSetting("TropicalFish", "Bucket Tropical Fish", true);
 
-        // Add target settings as sub-settings of autoCapture
-        autoCapture.addSubSettings(targetAxolotls, targetCod, targetPufferfish, targetSalmon, targetTadpoles, targetTropicalFish);
-
-        // Register settings with the module
-        this.registerSettings(autoCapture);
+        // Add target settings as settings
+        this.registerSettings(targetAxolotls, targetCod, targetPufferfish, targetSalmon, targetTadpoles, targetTropicalFish);
 
         tick = 0;
     }
@@ -107,7 +101,7 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
             return;
         }
 
-        if (autoCapture.getValue()) {
+        if (this.isToggled()) {
             autoBucketEntities();
         }
     }
