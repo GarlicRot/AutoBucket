@@ -52,7 +52,8 @@ To submit a pull request:
 6. Push your changes to your fork.
 7. Open a pull request in the original repository.
 
-Your pull request will be reviewed by the maintainers. Please be patient, as it may take some time to receive feedback.
+   - Ensure you fill out the [Pull Request Template](./.github/PULL_REQUEST_TEMPLATE/PULL_REQUEST_TEMPLATE.md) provided, which will guide you through the required information.
+   - Your pull request will be reviewed by the maintainers. Please be patient, as it may take some time to receive feedback.
 
 ## Development Setup
 
