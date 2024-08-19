@@ -17,7 +17,7 @@ Thank you for considering contributing to AutoBucket! Your contributions help im
 
 ## Code of Conduct
 
-This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [email@example.com](mailto:email@example.com).
+This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ## How to Contribute
 
