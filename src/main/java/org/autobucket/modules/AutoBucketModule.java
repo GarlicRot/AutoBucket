@@ -16,11 +16,11 @@ import net.minecraft.world.item.Items;
 import org.rusherhack.client.api.RusherHackAPI;
 import org.rusherhack.client.api.feature.module.ModuleCategory;
 import org.rusherhack.client.api.feature.module.ToggleableModule;
-import org.rusherhack.client.api.utils.InventoryUtils;
-import org.rusherhack.core.setting.BooleanSetting;
-import org.rusherhack.core.event.listener.EventListener;
 import org.rusherhack.core.event.subscribe.Subscribe;
+import org.rusherhack.core.setting.BooleanSetting;
+import org.rusherhack.core.setting.NumberSetting;
 import org.rusherhack.client.api.events.client.EventUpdate;
+import org.rusherhack.client.api.utils.InventoryUtils;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -28,17 +28,25 @@ import java.util.function.Predicate;
 /**
  * AutoBucket module for automatically capturing various entities in buckets.
  * This module can capture entities such as Axolotls, Cod, Pufferfish, Salmon, Tadpoles, and Tropical Fish.
+ * It also features rapid capture functionality with customizable cooldown settings.
  */
-public class AutoBucketModule extends ToggleableModule implements EventListener {
+public class AutoBucketModule extends ToggleableModule {
+
+    // Instance of the Minecraft game for accessing player and world data
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    // Settings for automatically capturing entities
-    private final BooleanSetting targetAxolotls;
-    private final BooleanSetting targetCod;
-    private final BooleanSetting targetPufferfish;
-    private final BooleanSetting targetSalmon;
-    private final BooleanSetting targetTadpoles;
-    private final BooleanSetting targetTropicalFish;
+    // Settings to specify which entities should be captured
+    private final BooleanSetting targetAxolotls = new BooleanSetting("Axolotls", "Bucket Axolotls", true);
+    private final BooleanSetting targetCod = new BooleanSetting("Cod", "Bucket Cod", true);
+    private final BooleanSetting targetPufferfish = new BooleanSetting("Pufferfish", "Bucket Pufferfish", true);
+    private final BooleanSetting targetSalmon = new BooleanSetting("Salmon", "Bucket Salmon", true);
+    private final BooleanSetting targetTadpoles = new BooleanSetting("Tadpoles", "Bucket Tadpoles", true);
+    private final BooleanSetting targetTropicalFish = new BooleanSetting("TropicalFish", "Bucket Tropical Fish", true);
+
+    // Rapid capture functionality settings
+    private final BooleanSetting rapidCatch = new BooleanSetting("RapidCatch", "Enable rapid capture of entities", false);
+    private final NumberSetting<Integer> rapidCooldown = new NumberSetting<>("RapidCooldown", "Cooldown between rapid captures (ticks)", 1, 1, 20)
+            .setVisibility(rapidCatch::getValue);
 
     // Tick counter to throttle capture attempts
     private int tick;
@@ -48,20 +56,19 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
      * Initializes the settings and registers them with the module.
      */
     public AutoBucketModule() {
-        super("AutoBucket", ModuleCategory.MISC);
+        super("AutoBucket", "Automatically buckets certain entities", ModuleCategory.MISC);
 
-        // Settings to target specific entities
-        targetAxolotls = new BooleanSetting("Axolotls", "Bucket Axolotls", true);
-        targetCod = new BooleanSetting("Cod", "Bucket Cod", true);
-        targetPufferfish = new BooleanSetting("Pufferfish", "Bucket Pufferfish", true);
-        targetSalmon = new BooleanSetting("Salmon", "Bucket Salmon", true);
-        targetTadpoles = new BooleanSetting("Tadpoles", "Bucket Tadpoles", true);
-        targetTropicalFish = new BooleanSetting("TropicalFish", "Bucket Tropical Fish", true);
-
-        // Add target settings as settings
-        this.registerSettings(targetAxolotls, targetCod, targetPufferfish, targetSalmon, targetTadpoles, targetTropicalFish);
-
-        tick = 0;
+        // Register settings for the module
+        this.registerSettings(
+                this.rapidCatch,
+                this.rapidCooldown,
+                this.targetAxolotls,
+                this.targetCod,
+                this.targetPufferfish,
+                this.targetSalmon,
+                this.targetTadpoles,
+                this.targetTropicalFish
+        );
     }
 
     /**
@@ -70,7 +77,6 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
      */
     @Override
     public void onEnable() {
-        super.onEnable();
         RusherHackAPI.getEventBus().subscribe(this);
     }
 
@@ -80,7 +86,6 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
      */
     @Override
     public void onDisable() {
-        super.onDisable();
         RusherHackAPI.getEventBus().unsubscribe(this);
     }
 
@@ -102,34 +107,38 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
         }
 
         if (this.isToggled()) {
-            autoBucketEntities();
+            autoBucketEntities(minecraft.player);
+
+            // Use normal cooldown for regular capture and sub-setting for RapidCatch
+            tick = rapidCatch.getValue() ? rapidCooldown.getValue() : 40;
         }
     }
 
     /**
      * Attempts to capture nearby entities using available water buckets.
+     *
+     * @param player The player entity performing the capture.
      */
-    private void autoBucketEntities() {
-        if (minecraft.player == null || minecraft.level == null) {
-            return;
-        }
-
+    private void autoBucketEntities(Entity player) {
         // Predicate to filter bucketable entities based on settings
-        Predicate<Entity> bucketableEntities = entity ->
-                (entity instanceof Axolotl && targetAxolotls.getValue()) ||
-                        (entity instanceof Cod && targetCod.getValue()) ||
-                        (entity instanceof Pufferfish && targetPufferfish.getValue()) ||
-                        (entity instanceof Salmon && targetSalmon.getValue()) ||
-                        (entity instanceof Tadpole && targetTadpoles.getValue()) ||
-                        (entity instanceof TropicalFish && targetTropicalFish.getValue());
+        Predicate<Entity> bucketableEntities = entity -> {
+            if (entity instanceof Axolotl && targetAxolotls.getValue()) return true;
+            if (entity instanceof Cod && targetCod.getValue()) return true;
+            if (entity instanceof Pufferfish && targetPufferfish.getValue()) return true;
+            if (entity instanceof Salmon && targetSalmon.getValue()) return true;
+            if (entity instanceof Tadpole && targetTadpoles.getValue()) return true;
+            return entity instanceof TropicalFish && targetTropicalFish.getValue();
+        };
 
         // Find entities within a 5 block radius
-        List<Entity> entities = minecraft.level.getEntities((Entity) null, minecraft.player.getBoundingBox().inflate(5.0), bucketableEntities);
+        assert minecraft.level != null;
+        List<Entity> entities = minecraft.level.getEntities((Entity) null, player.getBoundingBox().inflate(5.0), bucketableEntities);
 
+        // Attempt to capture each entity
         for (Entity entity : entities) {
             if (useMainHandBucketOnEntity(entity) || useHotbarBucketOnEntity(entity) || useInventoryBucketOnEntity(entity)) {
-                tick = 20;  // Throttle capture attempts
-                break;
+                tick = rapidCatch.getValue() ? rapidCooldown.getValue() : 40;  // Set cooldown
+                break;  // Stop after successfully capturing one entity
             }
         }
     }
@@ -155,8 +164,7 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
      * @return True if holding a water bucket, false otherwise.
      */
     private boolean isHoldingWaterBucket() {
-        assert minecraft.player != null;
-        ItemStack mainHandItem = minecraft.player.getMainHandItem();
+        ItemStack mainHandItem = minecraft.player != null ? minecraft.player.getMainHandItem() : ItemStack.EMPTY;
         return mainHandItem.getItem() == Items.WATER_BUCKET;
     }
 
@@ -182,7 +190,7 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
         if (slot != -1) {
             int hotbarSlot = findEmptyHotbarSlot();
             if (hotbarSlot != -1) {
-                InventoryUtils.swapSlots(slot, hotbarSlot);
+                InventoryUtils.swapSlots(slot, hotbarSlot);  // Using InventoryUtils to swap slots
                 boolean result = useBucketOnEntityFromSlot(entity, hotbarSlot);
                 InventoryUtils.swapSlots(slot, hotbarSlot);  // Swap back to the original slot
                 return result;
@@ -199,21 +207,16 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
      * @return True if the entity was successfully captured, false otherwise.
      */
     private boolean useBucketOnEntityFromSlot(Entity entity, int slot) {
-        assert minecraft.player != null;
-        int originalSlot = minecraft.player.getInventory().selected;
+        int originalSlot = minecraft.player != null ? minecraft.player.getInventory().selected : -1;
 
-        // Swap to the water bucket slot
-        minecraft.player.connection.send(new ServerboundSetCarriedItemPacket(slot));
-
-        // Send interaction packet
-        minecraft.player.connection.send(ServerboundInteractPacket.createInteractionPacket(entity, false, InteractionHand.MAIN_HAND));
-
-        // Restore the original slot
-        minecraft.player.connection.send(new ServerboundSetCarriedItemPacket(originalSlot));
-
-        // Check if the interaction was successful
-        ItemStack currentItem = minecraft.player.getInventory().getItem(slot);
-        return hasCapturedEntity(entity, currentItem);
+        if (originalSlot != -1) {
+            minecraft.player.connection.send(new ServerboundSetCarriedItemPacket(slot));
+            minecraft.player.connection.send(ServerboundInteractPacket.createInteractionPacket(entity, false, InteractionHand.MAIN_HAND));
+            minecraft.player.connection.send(new ServerboundSetCarriedItemPacket(originalSlot));
+            ItemStack currentItem = minecraft.player.getInventory().getItem(slot);
+            return hasCapturedEntity(entity, currentItem);
+        }
+        return false;
     }
 
     /**
@@ -224,12 +227,12 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
      * @return True if the item stack has captured the entity, false otherwise.
      */
     private boolean hasCapturedEntity(Entity entity, ItemStack itemStack) {
-        return (entity instanceof Axolotl && itemStack.getItem() == Items.AXOLOTL_BUCKET) ||
-                (entity instanceof Cod && itemStack.getItem() == Items.COD_BUCKET) ||
-                (entity instanceof Pufferfish && itemStack.getItem() == Items.PUFFERFISH_BUCKET) ||
-                (entity instanceof Salmon && itemStack.getItem() == Items.SALMON_BUCKET) ||
-                (entity instanceof Tadpole && itemStack.getItem() == Items.TADPOLE_BUCKET) ||
-                (entity instanceof TropicalFish && itemStack.getItem() == Items.TROPICAL_FISH_BUCKET);
+        if (entity instanceof Axolotl && itemStack.getItem() == Items.AXOLOTL_BUCKET) return true;
+        if (entity instanceof Cod && itemStack.getItem() == Items.COD_BUCKET) return true;
+        if (entity instanceof Pufferfish && itemStack.getItem() == Items.PUFFERFISH_BUCKET) return true;
+        if (entity instanceof Salmon && itemStack.getItem() == Items.SALMON_BUCKET) return true;
+        if (entity instanceof Tadpole && itemStack.getItem() == Items.TADPOLE_BUCKET) return true;
+        return entity instanceof TropicalFish && itemStack.getItem() == Items.TROPICAL_FISH_BUCKET;
     }
 
     /**
@@ -238,10 +241,11 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
      * @return The slot index of the water bucket, or -1 if not found.
      */
     private int findWaterBucketInHotbar() {
-        for (int i = 0; i < 9; i++) {
-            assert minecraft.player != null;
-            if (minecraft.player.getInventory().getItem(i).getItem() == Items.WATER_BUCKET) {
-                return i;
+        if (minecraft.player != null) {
+            for (int i = 0; i < 9; i++) {
+                if (minecraft.player.getInventory().getItem(i).getItem() == Items.WATER_BUCKET) {
+                    return i;
+                }
             }
         }
         return -1;
@@ -253,10 +257,11 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
      * @return The slot index of the water bucket, or -1 if not found.
      */
     private int findWaterBucketInInventory() {
-        for (int i = 9; i < 36; i++) {
-            assert minecraft.player != null;
-            if (minecraft.player.getInventory().getItem(i).getItem() == Items.WATER_BUCKET) {
-                return i;
+        if (minecraft.player != null) {
+            for (int i = 9; i < 36; i++) {
+                if (minecraft.player.getInventory().getItem(i).getItem() == Items.WATER_BUCKET) {
+                    return i;
+                }
             }
         }
         return -1;
@@ -268,10 +273,11 @@ public class AutoBucketModule extends ToggleableModule implements EventListener 
      * @return The slot index of an empty hotbar slot, or -1 if none are empty.
      */
     private int findEmptyHotbarSlot() {
-        for (int i = 0; i < 9; i++) {
-            assert minecraft.player != null;
-            if (minecraft.player.getInventory().getItem(i).isEmpty()) {
-                return i;
+        if (minecraft.player != null) {
+            for (int i = 0; i < 9; i++) {
+                if (minecraft.player.getInventory().getItem(i).isEmpty()) {
+                    return i;
+                }
             }
         }
         return -1;
